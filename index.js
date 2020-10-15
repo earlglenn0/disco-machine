@@ -17,7 +17,7 @@ service.start()
 const produceEvent = (topic, payload) => {
   const payloads = [{
     topic,
-    messages: [payload]
+    messages: [ payload]
   }]
   producer.send(payloads, (err, data) => {
     if (err) {
