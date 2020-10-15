@@ -14,6 +14,20 @@ const discoImplementation = require('./discoImplementation')
 const service  = interpret(Machine(discoConfig, discoImplementation))
 service.start()
 
+const produceEvent = (topic, payload) => {
+  const payloads = [{
+    topic,
+    messages: [ payload]
+  }]
+  producer.send(payloads, (err, data) => {
+    if (err) {
+      console.log('producer failed')
+    } else {
+      console.log('producer succeeded')
+    }
+  })
+}
+
 producer.on('ready', () => {
   console.log('producer ready')
   service.onTransition(state => {
@@ -22,24 +36,13 @@ producer.on('ready', () => {
       ...state.context,
       isBroken: state.value === 'broken'
     }
-    const payloads = [
-      {
-        topic: config.kafka_topic_produce,
-        messages: [ JSON.stringify(payload) ]
-      }
-    ]
-    producer.send(payloads, (err, data) => {
-      if (err) {
-        console.log('producer failed')
-      } else {
-        console.log('producer succeeded')
-      }
-    })
+    produceEvent(config.kafka_topic_produce, JSON.stringify(payload))
   })
-  consumer.on('message', (message) => {
-    console.log({ message })
-    service.send(message.value)
-  })
+})
+
+consumer.on('message', (message) => {
+  console.log({ message })
+  service.send(message.value)
 })
 
 http.listen(3002, () => {
